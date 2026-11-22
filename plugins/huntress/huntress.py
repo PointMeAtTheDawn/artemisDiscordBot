@@ -9,7 +9,8 @@ https://games.bisecthosting.com/docs#tag/Discord-Integration
 
 The Discord Integration tag on that spec is panel OAuth account linking.
 Connect and callback return 403 for API-key requests, so this plugin uses
-the server console endpoints instead:
+
+the server console endpoints through plugins.bisect:
 
     GET  /api/client/servers/{server}
     GET  /api/client/servers/{server}/resources
@@ -32,7 +33,9 @@ from artemis.permissions.resolver import Permission
 from artemis.plugin.base import PluginHelper, PluginInterface
 from artemis.events.listener import EventListener
 from artemis.utils.helpers import format_bytes
-from plugins.huntress.bisect import BisectApiError, BisectClient
+
+from plugins.bisect.bisect import BisectApiError, BisectClient
+
 
 logger = logging.getLogger("artemis.plugin.huntress")
 
