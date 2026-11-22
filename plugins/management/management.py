@@ -426,6 +426,10 @@ class Management(PluginInterface, PluginHelper):
                 
                 "talkingstick": (None, True, "Request talking stick", "Management"),
                 "vc": ("p.management.changevc", False, "Change voice channel name", "Management"),
+
+                "mc-health": (None, True, "Check Huntress Minecraft server health", "Huntress"),
+                "mc-restart": ("p.huntress.restart", False, "Restart the Huntress Minecraft server", "Huntress"),
+                "mc-kill": ("p.huntress.kill", False, "Kill the Huntress Minecraft server", "Huntress"),
             }
             
             all_commands = set(data.artemis.eventManager.command_listeners.keys())
