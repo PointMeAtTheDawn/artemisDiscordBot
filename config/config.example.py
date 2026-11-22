@@ -24,3 +24,10 @@ COMMAND_PREFIX = "!"
 
 # Testing mode (disables certain features)
 TESTING_MODE = False
+
+# Huntress Minecraft server on BisectHosting (Starbase client API).
+# Create a key under Account → API Credentials. The server id is the short
+# identifier from the panel URL, or the server UUID.
+HUNTRESS_BISECT_API_URL = "https://games.bisecthosting.com"
+HUNTRESS_BISECT_API_KEY = ""
+HUNTRESS_SERVER_ID = ""
