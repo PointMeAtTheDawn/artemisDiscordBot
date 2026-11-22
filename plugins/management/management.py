@@ -428,6 +428,7 @@ class Management(PluginInterface, PluginHelper):
                 "vc": ("p.management.changevc", False, "Change voice channel name", "Management"),
 
                 "mc-health": (None, True, "Check Huntress Minecraft server health", "Huntress"),
+                "mc-start": ("p.huntress.start", False, "Start the Huntress Minecraft server", "Huntress"),
                 "mc-restart": ("p.huntress.restart", False, "Restart the Huntress Minecraft server", "Huntress"),
                 "mc-kill": ("p.huntress.kill", False, "Kill the Huntress Minecraft server", "Huntress"),
             }

@@ -18,6 +18,7 @@ the server console endpoints through plugins.bisect:
 
 Commands:
     !mc-health  - Power state and resource usage
+    !mc-start   - Send a start signal
     !mc-restart - Send a restart signal
     !mc-kill    - Send a kill signal
 """
@@ -71,6 +72,17 @@ class Huntress(PluginInterface, PluginHelper):
 
         bot.eventManager.add_listener(
             EventListener.new()
+            .add_command("mc-start")
+            .set_callback(Huntress.start)
+            .set_help(
+                "**Usage**: `!mc-start`\n\n"
+                "Sends a start signal to the Huntress Minecraft server. "
+                "Requires permission `p.huntress.start` (admins by default)."
+            )
+        )
+
+        bot.eventManager.add_listener(
+            EventListener.new()
             .add_command("mc-restart")
             .set_callback(Huntress.restart)
             .set_help(
@@ -115,6 +127,11 @@ class Huntress(PluginInterface, PluginHelper):
             await Huntress.exception_handler(data.message, error)
 
     @staticmethod
+    async def start(data):
+        """Handle !mc-start."""
+        await Huntress._power(data, "start", "p.huntress.start")
+
+    @staticmethod
     async def restart(data):
         """Handle !mc-restart."""
         await Huntress._power(data, "restart", "p.huntress.restart")
@@ -148,6 +165,9 @@ class Huntress(PluginInterface, PluginHelper):
             if signal == "kill":
                 action = "Kill signal sent"
                 detail = "The server process was stopped immediately."
+            elif signal == "start":
+                action = "Start signal sent"
+                detail = "The server is starting."
             else:
                 action = "Restart signal sent"
                 detail = "The server is restarting."
