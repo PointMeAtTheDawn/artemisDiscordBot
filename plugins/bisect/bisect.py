@@ -5,8 +5,10 @@ Bisect plugin - Starbase client API.
 
 Docs: https://games.bisecthosting.com/api-docs/openapi.json
 
-This module has no commands. Huntress calls BisectClient. The plugin is loaded
-so the bot info hash covers this file.
+Huntress calls BisectClient for health, restart, and kill. This plugin
+registers the start command:
+
+    !mc-start - Send a start signal
 """
 
 import json
@@ -16,7 +18,9 @@ from urllib.parse import quote
 
 import aiohttp
 
-from artemis.plugin.base import PluginInterface
+from artemis.events.listener import EventListener
+from artemis.permissions.resolver import Permission
+from artemis.plugin.base import PluginHelper, PluginInterface
 
 logger = logging.getLogger("artemis.plugin.bisect")
 
@@ -83,13 +87,83 @@ class BisectClient:
                 return payload
 
 
-class Bisect(PluginInterface):
-    """Loaded plugin wrapper so this client is included in the bot info hash."""
+class Bisect(PluginInterface, PluginHelper):
+    """Starbase client plugin. Registers the server start command."""
 
     @staticmethod
     def register(bot):
-        """Register the plugin. It exposes no commands."""
-        logger.info("Bisect client module loaded.")
+        """Register the plugin."""
+        if Bisect.is_testing_client(bot):
+            bot.log.info("Not adding bisect commands on testing.")
+            return
+
+        bot.eventManager.add_listener(
+            EventListener.new()
+            .add_command("mc-start")
+            .set_callback(Bisect.start)
+            .set_help(
+                "**Usage**: `!mc-start`\n\n"
+                "Sends a start signal to the Huntress Minecraft server. "
+                "Requires permission `p.bisect.start` (admins by default)."
+            )
+        )
+
+    @staticmethod
+    async def start(data):
+        """Handle !mc-start."""
+        try:
+            check = Permission("p.bisect.start", data.artemis, False)
+            check.add_message_context(data.message)
+            if not await check.resolve():
+                await check.send_unauthorized_message(data.message.channel)
+                return
+
+            client = Bisect._client(data)
+            if client is None:
+                await data.message.reply(
+                    "Bisect is not configured. Set `HUNTRESS_BISECT_API_KEY` and "
+                    "`HUNTRESS_SERVER_ID` in `config/config.py`."
+                )
+                return
+
+            await client.send_power("start")
+            logger.info("Sent start signal for Huntress server (user %s)", data.message.author.id)
+            name = await Bisect._server_name(client)
+            target = f"**{name}**" if name else "the Huntress server"
+            await data.message.reply(f"Start signal sent to {target}. The server is starting.")
+        except BisectApiError as error:
+            logger.warning("BisectHosting API error %s: %s", error.status, error.detail)
+            await data.message.reply(f"BisectHosting returned an error ({error.status}): {error.detail}")
+        except aiohttp.ClientError as error:
+            await data.message.reply(f"Could not reach BisectHosting: {error}")
+        except Exception as error:
+            await Bisect.exception_handler(data.message, error)
+
+    @staticmethod
+    def _client(data) -> Optional[BisectClient]:
+        config = data.artemis.config
+        api_key = str(getattr(config, "HUNTRESS_BISECT_API_KEY", "") or "").strip()
+        server_id = str(getattr(config, "HUNTRESS_SERVER_ID", "") or "").strip()
+        base_url = str(
+            getattr(config, "HUNTRESS_BISECT_API_URL", "https://games.bisecthosting.com")
+            or "https://games.bisecthosting.com"
+        ).strip()
+        if not api_key or not server_id:
+            return None
+        return BisectClient(base_url, api_key, server_id)
+
+    @staticmethod
+    async def _server_name(client: BisectClient) -> Optional[str]:
+        try:
+            payload = await client.get_server()
+        except (BisectApiError, aiohttp.ClientError):
+            logger.warning("Start signal succeeded but server name lookup failed", exc_info=True)
+            return None
+        attributes = payload.get("attributes") if isinstance(payload, dict) else None
+        if not isinstance(attributes, dict):
+            attributes = payload if isinstance(payload, dict) else {}
+        name = attributes.get("name")
+        return str(name) if name else None
 
 
 def _decode_json(text: str) -> Any:
