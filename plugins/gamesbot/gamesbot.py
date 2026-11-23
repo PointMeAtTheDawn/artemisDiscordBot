@@ -93,10 +93,10 @@ class GamesBot(PluginInterface, PluginHelper):
         )
     
     @staticmethod
-    async def resolve_target(data, args: list, usage: str):
+    async def parse_args(data, args: list, usage: str):
         """Parse optional `-p USER` from args. Returns (member, game) or None after replying."""
         if not data.guild:
-            await data.message.reply("Could not find member information.")
+            await data.message.reply("Could not find server information.")
             return None
         if args and args[0] == "-p":
             if len(args) < 3:
@@ -124,7 +124,7 @@ class GamesBot(PluginInterface, PluginHelper):
                 await data.message.reply(usage)
                 return
             
-            target = await GamesBot.resolve_target(data, args, usage)
+            target = await GamesBot.parse_args(data, args, usage)
             if not target:
                 return
             member, game = target
@@ -155,7 +155,7 @@ class GamesBot(PluginInterface, PluginHelper):
                 await data.message.reply(usage)
                 return
             
-            target = await GamesBot.resolve_target(data, args, usage)
+            target = await GamesBot.parse_args(data, args, usage)
             if not target:
                 return
             member, game = target
